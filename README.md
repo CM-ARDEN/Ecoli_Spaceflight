@@ -22,3 +22,9 @@ Ecoli_Spaceflight/
 ├── 02_data_analysis.py         # Quality control & normalization (CPM)
 ├── 03_diff_expression.py       # Differential Expression Analysis (DEG calculations)
 └── 04_visualization.py         # Volcano plot generator (Matplotlib / Seaborn)
+git clone [https://github.com/CM-ARDEN/Ecoli_Spaceflight.git](https://github.com/CM-ARDEN/Ecoli_Spaceflight.git)
+cd Ecoli_Spaceflight
+python 01_data_download.py
+python 02_data_analysis.py
+python 03_diff_expression.py
+python 04_visualization.py
