@@ -1,45 +1,48 @@
+import os
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-print("📊 Volcano Plot Grafiği Oluşturuluyor...")
+def generate_volcano_plot():
+    print("Volcano Plot Gorsellestirmesi Hazirlaniyor...")
+    
+    deg_path = "data/deg_results.csv"
+    if not os.path.exists(deg_path):
+        raise FileNotFoundError(f"Gerekli DEG sonuclari bulunamadi: {deg_path}")
+        
+    df = pd.read_csv(deg_path, index_col=0)
+    
+    # -log10(padj) hesabi (0 degeri icin koruma eklendi)
+    df['minus_log10_padj'] = -np.log10(df['padj'].replace(0, 1e-300))
+    
+    plt.figure(figsize=(10, 7))
+    
+    # Anlamlilik durumlari
+    up_regulated = df[(df['padj'] < 0.05) & (df['log2FoldChange'] > 1.0)]
+    down_regulated = df[(df['padj'] < 0.05) & (df['log2FoldChange'] < -1.0)]
+    not_sig = df[(df['padj'] >= 0.05) | (df['log2FoldChange'].abs() <= 1.0)]
+    
+    plt.scatter(not_sig['log2FoldChange'], not_sig['minus_log10_padj'], color='grey', alpha=0.4, label='Not Significant', s=15)
+    plt.scatter(up_regulated['log2FoldChange'], up_regulated['minus_log10_padj'], color='#d95f02', alpha=0.8, label=f'Up-regulated (padj<0.05, FC>1) [{len(up_regulated)}]', s=25)
+    plt.scatter(down_regulated['log2FoldChange'], down_regulated['minus_log10_padj'], color='#7570b3', alpha=0.8, label=f'Down-regulated (padj<0.05, FC<-1) [{len(down_regulated)}]', s=25)
+    
+    # Esik cizgileri
+    plt.axhline(-np.log10(0.05), color='black', linestyle='--', linewidth=0.8, label='FDR padj = 0.05')
+    plt.axvline(1.0, color='blue', linestyle=':', linewidth=0.8)
+    plt.axvline(-1.0, color='blue', linestyle=':', linewidth=0.8)
+    
+    plt.title('E. coli Spaceflight vs Ground DEG Volcano Plot', fontsize=14, fontweight='bold')
+    plt.xlabel('log2(Fold Change)', fontsize=12)
+    plt.ylabel('-log10(padj)', fontsize=12)
+    plt.legend(loc='upper right', frameon=True)
+    plt.grid(True, linestyle='--', alpha=0.3)
+    
+    os.makedirs("data", exist_ok=True)
+    out_img = "data/volcano_plot.png"
+    plt.savefig(out_img, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Volcano Plot basariyla kaydedildi: {out_img}")
 
-# 1. Analiz sonuçlarını yükle
-df = pd.read_csv("data/ecoli_deg_results.csv")
-
-# 2. P-value değerlerini görselleştirme için -log10'a çevir
-# (0 olan p-value'ları çok küçük bir sayıyla değiştirerek hata almayı önle)
-df['log10_p'] = -np.log10(df['p_value'].replace(0, 1e-10))
-
-# 3. Grafik Alanını Oluştur
-plt.figure(figsize=(10, 7))
-
-# 4. Tüm genleri gri nokta olarak çiz
-plt.scatter(df['log2FC'], df['log10_p'], c='grey', alpha=0.5, label='Fark Etmeyenler')
-
-# 5. Anlamlı Genleri Renklendir (Kriter: |log2FC| > 0.5 ve p < 0.05)
-up = df[(df['log2FC'] > 0.5) & (df['p_value'] < 0.05)]
-down = df[(df['log2FC'] < -0.5) & (df['p_value'] < 0.05)]
-
-plt.scatter(up['log2FC'], up['log10_p'], c='red', alpha=0.8, label=f'Artanlar ({len(up)})')
-plt.scatter(down['log2FC'], down['log10_p'], c='blue', alpha=0.8, label=f'Azalanlar ({len(down)})')
-
-# 6. Eşik Çizgilerini Ekle
-plt.axhline(-np.log10(0.05), color='black', linestyle='--') # p=0.05 çizgisi
-plt.axvline(0.5, color='black', linestyle='--')  # Artış çizgisi
-plt.axvline(-0.5, color='black', linestyle='--') # Azalış çizgisi
-
-# 7. Etiketler ve Başlık
-plt.title("E. coli Uzay Stresi Volcano Plot (Flight vs GC)", fontsize=15)
-plt.xlabel("Log2 Fold Change (Değişim Miktarı)", fontsize=12)
-plt.ylabel("-Log10 P-value (İstatistiksel Anlamlılık)", fontsize=12)
-plt.legend()
-plt.grid(True, alpha=0.3)
-
-# 8. Grafiği Kaydet ve Göster
-plt.savefig("data/volcano_plot.png", dpi=300)
-print("\n🎉 Volcano plot 'data/volcano_plot.png' olarak kaydedildi!")
-print("👀 Grafiği açmak için terminale 'start data/volcano_plot.png' yazabilirsin.")
-
-# Bazı sistemlerde grafiği pencerede açar:
-plt.show()
+if __name__ == "__main__":
+    generate_volcano_plot()
