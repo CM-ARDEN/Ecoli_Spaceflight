@@ -1,24 +1,42 @@
 # E. coli Spaceflight Gene Expression & DEG Pipeline
 
-This repository contains an end-to-end bioinformatics and transcriptomics data processing pipeline designed to analyze differential gene expression (DEG) in Escherichia coli under simulated spaceflight/microgravity stress conditions.
+A reproducible bioinformatics workflow analyzing Escherichia coli transcriptomic responses to spaceflight microgravity using NASA GeneLab data (OSDR-728).
 
 ---
 
-## Overview
+## Primary Research Hypothesis
 
-Spaceflight environments expose microorganisms to microgravity and cosmic radiation, inducing significant physiological and transcriptional alterations. This project downloads raw RNA-Seq/count data, performs normalization (CPM), identifies differentially expressed genes (DEGs), and visualizes significant transcriptional shifts using a **Volcano Plot**.
+Spaceflight microgravity and low-shear fluid dynamics disrupt bacterial membrane equilibrium in *Escherichia coli*, inducing significant transcriptional up-regulation of outer membrane porins, molecular chaperones, and RpoS-dependent general stress adaptation pathways compared to 1g ground controls, accompanied by a targeted down-regulation of non-essential ribosomal biosynthesis to preserve cellular energetics.
 
 ---
 
-## Repository Structure
+## Quality Control & Statistical Framework
 
-```text
-Ecoli_Spaceflight/
-│
-├── data/                       # Contains processed counts, metadata, DEG results & plots
-│   └── volcano_plot.png        # Generated volcano plot
-├── notebook/                   # Exploratory analysis & Jupyter Notebooks
-├── 01_data_download.py         # Script to fetch raw dataset and metadata
-├── 02_data_analysis.py         # Quality control & normalization (CPM)
-├── 03_diff_expression.py       # Differential Expression Analysis (DEG calculations)
-└── 04_visualization.py         # Volcano plot generator (Matplotlib / Seaborn)
+| Parameter / Stage | Criteria & Pipeline Implementation | Methodological Rationale |
+| :--- | :--- | :--- |
+| **Raw Read Quality Control** | FastQC & MultiQC (Phred score >= 30) | Elimination of low-quality base calls and sequencing artifacts |
+| **Genome Alignment** | Reference Genome: E. coli K-12 (>= 85% unique alignment) | High-specificity alignment avoiding non-specific genomic mapping |
+| **Low Count Filtering** | CPM >= 1.0 across biological replicates | Removal of stochastic transcriptional noise and unexpressed genes |
+| **Variance Heterogeneity** | Welch's t-test (`scipy.stats.ttest_ind`, `equal_var=False`) | Correction for unequal group variances inherent in spaceflight stress |
+| **Multiple Testing Correction** | Benjamini-Hochberg FDR (`statsmodels.stats.multitest`) | Strict control of False Discovery Rate (Type I error) |
+| **Significance Thresholds** | padj < 0.05 and |log2FC| > 1.0 | Ensuring both high statistical confidence and biological effect size |
+
+---
+
+## Pipeline Architecture
+
+- `01_data_download.py`: Automated retrieval of NASA GeneLab OSDR-728 unnormalized count matrices.
+- `02_data_analysis.py`: Sample depth assessment, low-count filtering, and CPM normalization.
+- `03_diff_expression.py`: Welch's t-test with Benjamini-Hochberg FDR correction.
+- `04_visualization.py`: Volcano plot generation scaled by -log10(padj) vs. log2FC.
+
+---
+
+## Installation & Usage
+
+```bash
+pip install -r requirements.txt
+python 01_data_download.py
+python 02_data_analysis.py
+python 03_diff_expression.py
+python 04_visualization.py
